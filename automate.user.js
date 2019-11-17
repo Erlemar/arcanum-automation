@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         aardvark arcanum auto
-// @version      0.74
+// @version      0.79
 // @author       aardvark, Linspatz
 // @description  Automates casting buffs, buying gems making types gems, making lore. Adds sell junk/dupe item buttons. Must open the main tab and the spells tab once to work.
 // @downloadURL  https://github.com/mettalogic/arcanum-automation/raw/master/automate.user.js
@@ -468,7 +468,7 @@ function tc_autoadv()
 // Sells all items that are considered junk
 function tc_selljunk()
 {
-	var sell_exact = [ "amulet", "band", "belt", "boots", "broomstick", "cane", "cap", "cape", "cincture", "cloak", "club", "collar", "conical helm", "dagger", "girdle", "gloves", "greaves", "hat", "jerkin", "knife", "loop", "necklace", "pendant", "ring", "robe", "sash", "shortsword", "spear", "staff" ];
+	var sell_exact = [ "amulet", "axe", "band", "battleaxe", "belt", "boots", "broomstick", "cane", "cap", "cape", "cincture", "cloak", "club", "collar", "conical helm", "dagger", "girdle", "gloves", "greaves", "hat", "helm", "jerkin", "knife", "longsword", "loop", "mace", "necklace", "pendant", "ring", "robe", "sash", "shortsword", "spear", "staff" ];
 	var sell_match = [ "silk ", "cotton ", "stone ", "leather ", "^wood ", "bone ", "bronze ", "iron ", "^steel " ];	// aggressive
 
 	// "silk ", "cotton ", "stone ", "leather ", "^wood ", "bone ", "bronze ", "iron ", "^steel ", "quicksteel ", "mithril ", "ebonwood ", "ethereal ", "adamant "
@@ -625,7 +625,7 @@ function tc_advsetup()
 			seldungeon.addEventListener("click", function(){
 				tc_auto_adventure = qs.firstElementChild.firstElementChild.innerText;
 				tc_click_adv(tc_auto_adventure)});
-			if (tc_auto_adventure == qs.child[0].child[0].innerText)
+			if (tc_auto_adventure == qs.children[0].children[0].innerText)
 				seldungeon.setAttribute("style", "color:#1B5E20");
 			qs.appendChild(seldungeon);
 		}
@@ -868,6 +868,17 @@ function tc_autoheal()
 	}
 }
 
+//coloring potions in red :D
+function tc_colorpot(){
+    if (tc_gettab() !== "equip") return;
+    for (let item of document.querySelectorAll(".item-table .separate")){
+        if (item.children[1].children[0].innerHTML == "Use"){
+            item.children[0].style["background-color"] = "red";
+        }
+    }
+}
+
+
 var tc_menu_inv_state = 0;
 
 /* We need to switch tabs to get lists of equipment, but need to allow time for tab to populate,
@@ -897,7 +908,7 @@ function tc_menu_inv()
 		tc_menu_inv_state++;
 		break;
 	case 2: 	// Grab lists of equipment, inventory and switch to adventure
-		tc_menu_inv.equip = document.querySelectorAll(".inv-equip .equip tr");	// store in static var
+		tc_menu_inv.equip = document.querySelectorAll(".inv-equip .equip .equip-slot");	// store in static var
 		tc_menu_inv.inv = document.querySelectorAll(".item-table tr");
 
 		// Build a map of item -> qty
@@ -918,7 +929,7 @@ function tc_menu_inv()
 		var invs = tc_menu_inv.inv;
 
 		// equip is always going to be 11 (as it's body slots, not items), so not actually much use
-		console.log("Loot items = " + loots.length + ", equip = " + equips.length + ", inv = " + invs.length);
+		if (tc_debug) console.log("Loot items = " + loots.length + ", equip = " + equips.length + ", inv = " + invs.length);
 
 		// Can use document.querySelectorAll(".menu-content")[0].clientWidth and clientHeight to get size of area to use for display.
 		// Can also use getBoundingClientRect(). x y width height top left etc.  Not sure if this is useful.
@@ -956,7 +967,7 @@ function tc_menu_inv()
 		}
 		if (html != "")
 			document.getElementById("tc_inv_loot").innerHTML = "<b>Miscellaneous loot:</b><br>" + html;
-		console.log("Loot map items: " + loot.size);
+		if (tc_debug) console.log("Loot map items: " + loot.size);
 //		tc_loot = loot;	// remove
 
 		// Equip
@@ -1053,7 +1064,7 @@ function tc_menu_inv_close()
 	tc_menu_inv_state = 0;
 }
 
-// Dealing with inventory (zzz)
+// Dealing with inventory
 function tc_inv_setup()
 {
 	// Create a menu item (tab) "Inventory".
@@ -1352,6 +1363,7 @@ function tc_start_timers()	// can be restarted by save_settings()
 		window.clearInterval(tc_timer_autocast);
 
 	tc_timer_ac = window.setInterval(function() {
+		tc_config_setup();
 		tc_populate_spells();
 		tc_populate_resources();
 		tc_populate_actions();
@@ -1366,6 +1378,7 @@ function tc_start_timers()	// can be restarted by save_settings()
 		tc_advsetup();
 		tc_autoearngold();
 		tc_menu_inv();	// handle populating Inventory tab
+		tc_colorpot() // potion coloring
 	}, tc_auto_speed);
 
 	tc_timer_autocast = window.setInterval(function() {
